@@ -2,9 +2,17 @@ import streamlit as st
 from groq import Groq
 from langchain_openai import ChatOpenAI
 import openai
-
+import credentials
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 #from src.langchainAPI.ModelSingleton import ChatChainSingleton
 
+uri = "mongodb+srv://rchon008:FiuStarsGPT2024@stargpt-database.h9cbh.mongodb.net/"
+# Create a new client and connect to the server
+client = MongoClient(uri, server_api=ServerApi('1'))
+
+db = client['user-data']
+collection = db['data']
 hidden_items = """
     <style>
     .st-emotion-cache-79elbk {visibility: hidden;}
@@ -17,6 +25,14 @@ if 'messages' not in st.session_state:
 
 st.title("StarsGPT")
 st.logo("images/profile-user-gray.png")
+
+# Checks credentials.py username to see if it is empty if so it will look into the database and find the username
+if credentials.username == "":
+    results = collection.find({'email': credentials.email})
+    for result in results:
+        credentials.username = result["username"]
+st.sidebar.title(credentials.username)
+
 
 with st.sidebar.expander("Profile", icon=":material/account_circle:"):
     profilePic = st.button("Edit Profile",use_container_width=True)
@@ -42,6 +58,8 @@ elif api_choice == "OpenAI":
 
 logout = st.sidebar.button("Logout",use_container_width=True)
 if logout:
+    for key in st.session_state.keys():
+        del st.session_state[key]
     st.switch_page("Login.py")
 
 message_container = st.container()
